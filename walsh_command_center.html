@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walsh Territory Command Center</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#639922;--gb:#EAF3DE;--gt:#27500A;
+  --y:#BA7517;--yb:#FAEEDA;--yt:#633806;
+  --r:#E24B4A;--rb:#FCEBEB;--rt:#791F1F;
+  --b:#378ADD;--bb:#E6F1FB;--bt:#0C447C;
+  --p:#534AB7;--pb:#EEEDFE;--pt:#3C3489;
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#ededea;
+  --text:#1a1a18;--text2:#6b6b68;--text3:#9b9b97;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1a1a18;--bg2:#242422;--bg3:#2e2e2b;
+    --text:#f0efe8;--text2:#a0a09a;--text3:#6b6b68;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);background:var(--bg3);font-size:13px;min-height:100vh}
+.shell{max-width:960px;margin:0 auto;padding:1.5rem 1rem}
+.app-header{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.app-title{font-size:17px;font-weight:600}
+.app-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.week-chip{font-size:10px;background:var(--bg2);color:var(--text2);padding:4px 10px;border-radius:20px;border:.5px solid var(--border)}
+.top-nav{display:flex;gap:0;border-bottom:.5px solid var(--border);margin-bottom:1.25rem;background:var(--bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:0 1rem;overflow-x:auto}
+.tnav{padding:10px 14px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-.5px;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.tnav.act{color:var(--text);border-bottom:2px solid var(--text);font-weight:500}
+.tnav:hover{color:var(--text)}
+.content-area{background:var(--bg);border:.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:1.25rem}
+.pg{display:none}.pg.act{display:block}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;white-space:nowrap}
+.bg-g{background:var(--gb);color:var(--gt)}.bg-y{background:var(--yb);color:var(--yt)}.bg-r{background:var(--rb);color:var(--rt)}.bg-b{background:var(--bb);color:var(--bt)}.bg-p{background:var(--pb);color:var(--pt)}
+.pri-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+.p1{background:var(--rb);color:var(--rt)}.p2{background:var(--yb);color:var(--yt)}.p3{background:var(--bb);color:var(--bt)}
+.section-lbl{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .6rem}
+.todo-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:11px 13px;margin-bottom:7px;display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start;transition:opacity .15s}
+.todo-card.done{opacity:.4}
+.todo-card.done .todo-main{text-decoration:line-through;color:var(--text2)}
+.todo-card.bl-p1{border-left:3px solid var(--r)}.todo-card.bl-p2{border-left:3px solid var(--y)}.todo-card.bl-p3{border-left:3px solid var(--b)}
+.cb{width:16px;height:16px;border:.5px solid var(--border2);border-radius:3px;cursor:pointer;background:var(--bg);display:flex;align-items:center;justify-content:center;margin-top:2px;flex-shrink:0;user-select:none}
+.cb.checked{background:var(--text);border-color:var(--text)}
+.cb.checked::after{content:'✓';color:var(--bg);font-size:10px}
+.todo-main{font-size:12px;font-weight:500;line-height:1.45}
+.todo-sub{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.55}
+.todo-strat{font-size:11px;color:var(--bt);margin-top:3px;line-height:1.55;font-style:italic}
+.todo-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.todo-actions{display:flex;flex-direction:column;gap:4px;align-items:flex-end;padding-top:2px}
+.btn-sm{padding:3px 9px;font-size:10px;cursor:pointer;border:.5px solid var(--border2);border-radius:4px;background:none;color:var(--text2);font-family:inherit;white-space:nowrap}
+.btn-sm:hover{background:var(--bg2);color:var(--text)}
+.own-dan{background:var(--gb);color:var(--gt)}.own-sdr{background:var(--pb);color:var(--pt)}.own-both{background:var(--yb);color:var(--yt)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--bg2);border-radius:var(--radius);padding:.75rem;text-align:center}
+.stat-val{font-size:22px;font-weight:600}
+.stat-lbl{font-size:10px;color:var(--text2);margin-top:2px}
+.owner-toggle{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.otog{padding:4px 10px;font-size:11px;cursor:pointer;border:.5px solid var(--border2);border-radius:20px;background:none;color:var(--text2);font-family:inherit}
+.otog.sel{background:var(--text);color:var(--bg);border-color:var(--text)}
+.add-task-form{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:1rem;display:none}
+.add-task-form.show{display:block}
+.add-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.add-form-grid input,.add-form-grid select{font-size:12px;font-family:inherit;padding:6px 8px;border:.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text)}
+.full{grid-column:1/-1}
+.btn-primary{padding:6px 14px;font-size:12px;cursor:pointer;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-family:inherit;font-weight:500}
+.btn-cancel{padding:6px 12px;font-size:12px;cursor:pointer;border:.5px solid var(--border2);border-radius:var(--radius);background:none;color:var(--text2);font-family:inherit;margin-left:6px}
+.strategy-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:10px}
+.strat-head{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.strat-acct{font-size:14px;font-weight:600}
+.strat-body{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:8px}
+.strat-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.strat-col-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.strat-bullets{list-style:none;padding:0}
+.strat-bullets li{font-size:12px;color:var(--text2);padding:2px 0;display:flex;gap:6px;line-height:1.55}
+.strat-bullets li::before{content:'→';color:var(--b);flex-shrink:0}
+.contact-acct-head{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:7px;flex-wrap:wrap}
+.contact-grid{display:grid;gap:5px;margin-bottom:1.25rem}
+.contact-row{background:var(--bg);border:.5px solid var(--border);border-radius:6px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.contact-row.bl-g{border-left:3px solid var(--g)}.contact-row.bl-y{border-left:3px solid var(--y)}.contact-row.bl-r{border-left:3px solid var(--r)}
+.c-name{font-weight:500;font-size:12px}
+.c-title{font-size:11px;color:var(--text2)}
+.c-activity{margin-top:3px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius-lg);border:.5px solid var(--border2);width:min(580px,95vw);max-height:85vh;overflow-y:auto;padding:1.25rem;position:relative}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
+.modal-title{font-size:14px;font-weight:600}
+.modal-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.close-btn{cursor:pointer;font-size:18px;color:var(--text2);background:none;border:none;padding:0;line-height:1;flex-shrink:0}
+.fw-row{display:flex;gap:5px;margin-bottom:.75rem;flex-wrap:wrap}
+.fw-btn{padding:4px 10px;font-size:11px;cursor:pointer;border:.5px solid var(--border2);border-radius:4px;background:none;color:var(--text2);font-family:inherit}
+.fw-btn.sel{background:var(--bb);color:var(--bt);border-color:var(--b)}
+.input-lbl{display:block;font-size:11px;color:var(--text2);margin-bottom:4px}
+.ctx-input{width:100%;font-size:12px;font-family:inherit;padding:7px 9px;border:.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);margin-bottom:.75rem;resize:vertical}
+.gen-btn{padding:7px 14px;font-size:12px;cursor:pointer;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-family:inherit;font-weight:500}
+.gen-btn:hover{opacity:.85}
+.copy-btn{padding:5px 10px;font-size:11px;cursor:pointer;border:.5px solid var(--border2);border-radius:4px;background:none;color:var(--text2);font-family:inherit;margin-left:8px}
+.gen-status{font-size:11px;color:var(--text2);margin-left:8px}
+.gen-output{background:var(--bg2);border-radius:var(--radius);padding:1rem;font-size:12px;line-height:1.7;white-space:pre-wrap;min-height:100px;max-height:320px;overflow-y:auto;color:var(--text);margin-top:.75rem;display:none}
+.gen-output.loading{color:var(--text2);font-style:italic}
+.legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.dot-sm{width:7px;height:7px;border-radius:50%}
+.dot-g{background:var(--g)}.dot-y{background:var(--y)}.dot-r{background:var(--r)}
+@media(max-width:560px){.stats-row{grid-template-columns:repeat(2,1fr)}.strat-cols{grid-template-columns:1fr}.add-form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="app-header">
+  <div>
+    <div class="app-title">Territory Command Center</div>
+    <div class="app-sub">Dan Walsh · AMER ENT Major Central-3 · Amplitude</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="legend">
+      <div class="leg"><span class="dot-sm dot-g"></span>Active</div>
+      <div class="leg"><span class="dot-sm dot-y"></span>Partial</div>
+      <div class="leg"><span class="dot-sm dot-r"></span>No outreach</div>
+    </div>
+    <div class="week-chip">Week of Apr 21, 2026</div>
+  </div>
+</div>
+
+<div style="background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+  <div class="top-nav">
+    <button class="tnav act" onclick="switchPg('todo',this)">Weekly to-dos</button>
+    <button class="tnav" onclick="switchPg('strat',this)">Account strategies</button>
+    <button class="tnav" onclick="switchPg('contacts',this)">Contact tracker</button>
+  </div>
+
+  <div class="content-area">
+
+    <!-- ═══ TO-DO PAGE ═══ -->
+    <div id="todo" class="pg act">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:8px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:15px;font-weight:600">Weekly to-do list</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">Prioritized by intent signal + outreach gaps · Dan + SDR coordinated</div>
+        </div>
+        <button class="btn-sm" style="font-size:11px;padding:5px 10px" onclick="toggleAdd()">+ Add task</button>
+      </div>
+
+      <div class="add-task-form" id="add-form">
+        <div style="font-size:12px;font-weight:500;margin-bottom:10px">Add custom task</div>
+        <div class="add-form-grid">
+          <input id="nt-text" type="text" placeholder="Task description" class="full">
+          <select id="nt-owner"><option value="dan">Dan</option><option value="sdr">SDR</option><option value="both">Both</option></select>
+          <select id="nt-pri"><option value="p1">Priority 1 — urgent</option><option value="p2">Priority 2 — this week</option><option value="p3">Priority 3 — plant seeds</option></select>
+          <input id="nt-acct" type="text" placeholder="Account name" class="full">
+        </div>
+        <button class="btn-primary" onclick="addTask()">Add task</button>
+        <button class="btn-cancel" onclick="toggleAdd()">Cancel</button>
+      </div>
+
+      <div id="stats-row" class="stats-row"></div>
+      <div class="owner-toggle">
+        <span style="font-size:11px;color:var(--text2)">View:</span>
+        <button class="otog sel" onclick="setOwner('all',this)">All tasks</button>
+        <button class="otog" onclick="setOwner('dan',this)">Dan only</button>
+        <button class="otog" onclick="setOwner('sdr',this)">SDR only</button>
+        <button class="otog" onclick="setOwner('open',this)">Open only</button>
+      </div>
+      <div id="todo-list"></div>
+    </div>
+
+    <!-- ═══ STRATEGY PAGE ═══ -->
+    <div id="strat" class="pg">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:1rem">Ranked by intent × coverage gap. Use as weekly SDR sync briefing.</div>
+      <div id="strat-list"></div>
+    </div>
+
+    <!-- ═══ CONTACTS PAGE ═══ -->
+    <div id="contacts" class="pg">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:1rem">All Director+ contacts across active prospect accounts — scored by outreach activity.</div>
+      <div id="contact-tracker"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MESSAGE MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modal-title">Message builder</div>
+        <div class="modal-sub" id="modal-sub"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <label class="input-lbl">Message type</label>
+    <div class="fw-row">
+      <button class="fw-btn sel" onclick="selType('email',this)">Email</button>
+      <button class="fw-btn" onclick="selType('inmail',this)">LinkedIn InMail</button>
+      <button class="fw-btn" onclick="selType('call',this)">Call script</button>
+      <button class="fw-btn" onclick="selType('vm',this)">Voicemail</button>
+    </div>
+    <label class="input-lbl">Sales framework</label>
+    <div class="fw-row">
+      <button class="fw-btn sel" onclick="selFW('challenger',this)">Challenger</button>
+      <button class="fw-btn" onclick="selFW('nepq',this)">NEPQ</button>
+      <button class="fw-btn" onclick="selFW('hybrid',this)">Challenger + NEPQ hybrid</button>
+    </div>
+    <label class="input-lbl">Context / trigger <span style="font-weight:400">(optional)</span></label>
+    <textarea class="ctx-input" id="ctx" rows="2" placeholder="e.g. Pendo renewal coming up, met at Snowflake Summit, Q1 earnings call..."></textarea>
+    <div style="display:flex;align-items:center">
+      <button class="gen-btn" onclick="genMsg()">Generate ↗</button>
+      <button class="copy-btn" id="copy-btn" style="display:none" onclick="copyMsg()">Copy</button>
+      <span class="gen-status" id="gen-status"></span>
+    </div>
+    <div class="gen-output" id="gen-output"></div>
+  </div>
+</div>
+
+<script>
+const TODOS=[
+  {id:1,owner:'dan',pri:'p1',acct:'Abbott',done:false,task:'First touch to Sabina Ewing (CIO) + Elizabeth Baicy (Head of Product, Lingo)',why:'Intent 94 · Purchase stage · 0 of 17 contacts touched · HelloLingo footprint is your beachhead — Diabetes Care has separate Very High intent',strategy:'Challenger: medtech analytics consolidation insight. Lingo as the proof point beachhead.',contact:{name:'Sabina Ewing',title:'SVP & CIO',acct:'Abbott',industry:'Healthcare / Diagnostics'}},
+  {id:2,owner:'sdr',pri:'p1',acct:'Abbott',done:false,task:'Enroll 8 Director-level Abbott contacts in brand awareness sequence',why:'Dan Stout, Arvind K, Nitesh Luthra, John Yesko, Cameron North, Kevin Kaiser, Patrick Feeney — all red, all reachable',strategy:'NEPQ: "What does your current analytics stack look like across Diabetes Care vs Nutrition vs Devices — are those teams sharing data today?"',contact:{name:'Dan Stout',title:'Director Digital Delivery',acct:'Abbott',industry:'Healthcare / Diagnostics'}},
+  {id:3,owner:'dan',pri:'p1',acct:'McGraw Hill',done:false,task:'Cold email David Cortese (CDIO) + Libby Van Why (VP Product Experience)',why:'$3.1M tpARR · Decision stage · Emails mapped: david.cortese@mheducation.com / libby.vanwhy@mheducation.com — never sent',strategy:'Challenger: EdTech orgs running Pendo + Adobe are flying blind on content engagement. Analytics as a learning-loop problem.',contact:{name:'David Cortese',title:'Chief Digital Information Officer',acct:'McGraw Hill',industry:'EdTech / Publishing'}},
+  {id:4,owner:'sdr',pri:'p1',acct:'McGraw Hill',done:false,task:'Enroll Shawn Francis, Rohun Pai, Kate Gemmellaro, Brad Fulkerson in tailored sequence',why:'Sr Directors with mapped emails — zero outreach. Pendo + FullStory + Hotjar = major tool sprawl / displacement opportunity.',strategy:'NEPQ: "How are your product and content teams measuring whether a student actually engages with a feature vs just clicks through it?"',contact:{name:'Shawn Francis',title:'Sr Director AI & Personalization PM',acct:'McGraw Hill',industry:'EdTech / Publishing'}},
+  {id:5,owner:'dan',pri:'p1',acct:'JLL',done:false,task:'Research + first touch to 3 Dir+ contacts at JLL — CPO, VP Digital, Head of Analytics',why:'Intent 95 · Purchase stage · Very High PQA · $510K tpARR · Zero contacts mapped — highest intent untouched account in territory',strategy:'Challenger: PropTech platforms measuring clicks not journeys. Amplitude = the behavioral layer CRE digital teams are missing.',contact:{name:'TBD — JLL VP Digital / CPO',title:'VP or Director, Digital/Analytics',acct:'JLL',industry:'Corporate Real Estate'}},
+  {id:6,owner:'dan',pri:'p1',acct:'Enterprise Holdings',done:false,task:'Directly email Shane Behl (CIO) + John Macdonald (VP Consumer Digital & Loyalty)',why:'Both 100% red. 12 AVP/Dir contacts were called 2/18 with no follow-up for 60 days. CIO and VP Digital Loyalty never touched.',strategy:'NEPQ to CIO: "When your digital team makes a product decision — are they working from behavioral data or gut instinct? What does that gap cost in one release cycle?"',contact:{name:'Shane Behl',title:'Chief Information Officer',acct:'Enterprise Holdings',industry:'Rental Car / Mobility'}},
+  {id:7,owner:'sdr',pri:'p1',acct:'Enterprise Holdings',done:false,task:'Re-engage 12 contacts called 2/18 — send 30-day proof-point follow-up email',why:'Tim McKittrick, Jesse Zenthoefer, Kevin Brandt + 9 others got calls with no VM and no follow-up. 60 days of silence kills momentum.',strategy:'Short proof point email + NEPQ question: "What would it take for you to see how customers actually use your app between rentals?"',contact:{name:'Tim McKittrick',title:'AVP Digital Products',acct:'Enterprise Holdings',industry:'Rental Car / Mobility'}},
+  {id:8,owner:'dan',pri:'p1',acct:'Fifth Third Bank',done:false,task:'Build targeted outreach for Tom Gottlieb (EVP CIO), Ben Hoffman (EVP CSO), Melissa Stevens (EVP CMO)',why:'$1.1M tpARR · 3 EVPs + 6 SVPs/VPs never contacted · Jenny Chan got 1 InMail 7 months ago — only touch on entire account',strategy:'Challenger to CIO: Banks still running Adobe Analytics measure page views, not digital behavior. There\'s a real cost to that gap.',contact:{name:'Tom Gottlieb',title:'EVP & CIO — Consumer & Commercial Bank',acct:'Fifth Third Bank',industry:'Financial Services'}},
+  {id:9,owner:'sdr',pri:'p1',acct:'Fifth Third Bank',done:false,task:'Enroll Bryan Greaves (VP Analytics), Erin Crawford (VP Consumer Digital), Bobby Kahn (VP Product) in sequence',why:'Strong Profile Fit · Adobe + WalkMe + Snowflake tech stack · GA takeout + Web Experiment land opportunity mapped in 6sense',strategy:'NEPQ: "How does your digital analytics team connect what a customer does in the app to what they do next — and how confident are you in that data?"',contact:{name:'Bryan Greaves',title:'VP Consumer Insights & Analytics',acct:'Fifth Third Bank',industry:'Financial Services'}},
+  {id:10,owner:'dan',pri:'p2',acct:'United Airlines',done:false,task:'First touch to Mahesh Veda (MD Digital Channels & Loyalty) — not in UA sequence',why:'Managing Director, Personalization & Loyalty — key persona completely missed by current sequence. Loyalty analytics is core Amplitude use case.',strategy:'Challenger + NEPQ: Loyalty programs measuring enrollment not engagement. "What is your current single source of truth for how a MileagePlus member behaves between flights?"',contact:{name:'Mahesh Veda',title:'Managing Director Digital Channels, Personalization & Loyalty',acct:'United Airlines',industry:'Airline'}},
+  {id:11,owner:'sdr',pri:'p2',acct:'United Airlines',done:false,task:'Add 6 untouched UA Directors to sequence: Rajesh Krishnan, Rama Rachappa, Luke Meminger, Sadia Khan, Mehul Patel, Indresh Chatram',why:'All red · All Directors · UA sequence covers ops/product but misses fleet, loyalty currency, customer servicing, marketing personas',strategy:'Personalized 1-liner per persona: Fleet = ops data. Loyalty currency = engagement analytics. Marketing = attribution gap.',contact:{name:'Rajesh Krishnan',title:'Director Customer Servicing Digital Platforms',acct:'United Airlines',industry:'Airline'}},
+  {id:12,owner:'dan',pri:'p2',acct:"Wendy's",done:false,task:'Strip line to non-responders + first touch to Elise Baer + David Galinsky',why:'Elise (Dir Enterprise Tech PM) and David Galinsky (Sr Dir Omnichannel Measurement) have mapped emails but zero outreach despite 4 others being actively touched',strategy:'Strip line to stalled contacts. Direct email to Galinsky — Sr Dir Omnichannel Measurement is a perfect analytics persona.',contact:{name:'Elise Baer',title:'Director Enterprise Technology PM',acct:"Wendy's",industry:'QSR'}},
+  {id:13,owner:'sdr',pri:'p2',acct:'Grainger',done:false,task:'Restart Grainger sequence — add Brian W (CPO) + Shama P + David Brenner who have never been contacted',why:'CPO Brian W is the economic buyer and has never been contacted. Brand sequences from Feb stalled with no follow-up.',strategy:'Re-open with Snowflake L&L invite as warm re-entry. NEPQ: "How is your eCommerce analytics team connecting Zoro behavior to Grainger.com behavior right now?"',contact:{name:'Brian W',title:'Chief Product Officer',acct:'Grainger',industry:'Manufacturing / Distribution'}},
+  {id:14,owner:'dan',pri:'p2',acct:'ForeFlight',done:false,task:'EBR prep + renewal strategy — renewal Jun 2026 (60 days out)',why:'Yellow health · Yellow usage · Experiment + SR + G&S whitespace · Renewal in 60 days — needs expansion conversation now',strategy:'Pre-EBR with CSM Cale Conry. Expansion talk track: 800K MTUs → path to 1M+ with Experiment + Session Replay landing.',contact:{name:'ForeFlight Exec',title:'VP or Director level',acct:'ForeFlight',industry:'Aviation SaaS'}},
+  {id:15,owner:'dan',pri:'p2',acct:'Thomson Reuters',done:false,task:'Renewal risk conversation — Nov 2026 deadline, Red health, tiny footprint',why:'$82K ARR · Red/Red health score · Pendo + Experiment + CDP expansion opportunity · 7 months to renewal',strategy:'Challenger to expand: "TR uses Pendo and Mixpanel across other products — how does your team decide which analytics tool earns the enterprise contract?"',contact:{name:'Thomson Reuters exec',title:'Director/VP Digital',acct:'Thomson Reuters',industry:'Media & Technology'}},
+  {id:16,owner:'sdr',pri:'p3',acct:'Elevance Health',done:false,task:'Research + enroll 5 Director+ Elevance contacts in brand awareness sequence',why:'Decision stage · Intent 73 · Amplitude alumni present · SR + Web Exp + Adobe co-exist opportunity · Zero outreach currently',strategy:'Alumni pathway: identify the Amplitude alumni at Elevance (6sense flagged) and use as warm intro to analytics team.',contact:{name:'Elevance — TBD',title:'Director Digital or Product',acct:'Elevance Health',industry:'Healthcare Insurance'}},
+  {id:17,owner:'sdr',pri:'p3',acct:'HCSC',done:false,task:'Add 5 Dir+ contacts at HCSC to outreach sequence',why:'Decision stage · Intent 73 · Strong Profile Fit · Web Experiment Land + GA Takeout + Adobe co-exist mapped by 6sense',strategy:'Adobe co-exist angle: "HCSC already uses Adobe Analytics — Amplitude extends that with real-time behavioral data and experimentation, not replaces it."',contact:{name:'HCSC — TBD',title:'Director Digital or Analytics',acct:'HCSC',industry:'Insurance'}},
+  {id:18,owner:'both',pri:'p3',acct:'John Deere',done:false,task:'John Deere targeted PG kickoff — JD Financial is Purchase stage, Intent 91',why:'John Deere Financial VP-level contacts at Purchase stage + Intent 91 + Strong Fit. FullStory + Adobe displacement angle.',strategy:'Challenger: Precision Ag and Construction Solutions run siloed analytics — what does a unified behavioral layer unlock for product velocity?',contact:{name:'JD Financial exec',title:'Director/VP Product or Analytics',acct:'John Deere',industry:'Manufacturing / AgTech'}},
+  {id:19,owner:'both',pri:'p3',acct:'All accounts',done:false,task:'Build Snowflake L&L invite list: Grainger, HCSC, United Airlines, Elevance contacts',why:'All four accounts use Snowflake. This event is a low-friction warm entry for cold accounts across the territory.',strategy:'SDR builds invite list. Dan personalizes exec invites. Segment by industry for table conversations.',contact:{name:'Multiple',title:'Director+ at Snowflake accounts',acct:'Multiple accounts',industry:'Various'}},
+];
+
+const STRATEGIES=[
+  {acct:'Abbott',badge:'p1',intent:94,stage:'Purchase',tparr:'$653K',gap:'ALL 17 contacts red',summary:'Highest intent score in territory (94) with Purchase stage. HelloLingo footprint is your beachhead — Diabetes Care has Very High intent independently. Zero outreach is a critical miss at a $43B company.',dan:['Email Sabina Ewing (CIO) with Challenger insight on medtech analytics consolidation','Direct outreach to Elizabeth Baicy (Head of Product, Lingo) — product persona, easiest first door','Alumni pathway: Anuja Agarwal, Caroline Kryder, Sterling Gerritz at Abbott — warm intro route'],sdr:["Enroll Dan Stout, Nitesh Luthra, John Yesko, Kevin Kaiser in sequence","Separate Diabetes Care sequence: Kris Mihalic, Liz O'Hara","LinkedIn video InMails to Arvind K and Cameron North"]},
+  {acct:'JLL',badge:'p1',intent:95,stage:'Purchase',tparr:'$510K',gap:'Zero contacts mapped',summary:'Highest intent + PQA in territory. No contacts mapped at all. Real estate and PropTech is an underserved ICP for Amplitude — clean Challenger opportunity in a Chicago HQ company.',dan:['Pull Director+ contacts from LinkedIn Sales Nav: VP Digital, Head of Analytics, CPO','Challenger email: PropTech platforms still measuring page views, not journeys','Chicago advantage — JLL HQ is in Chicago, same city as Dan'],sdr:['Build contact list from LinkedIn (target: 8-10 Director+ contacts)','Add to Snowflake L&L invite list once contacts are mapped']},
+  {acct:'McGraw Hill',badge:'p1',intent:79,stage:'Decision',tparr:'$3.1M',gap:'19 contacts mapped, 0 touched',summary:'Decision stage with Amplitude alumni present. Pendo + FullStory + Hotjar = classic tool sprawl that Amplitude consolidates. 19 contacts with emails mapped in the spreadsheet and not one has been contacted.',dan:['Email CDIO David Cortese + CPO Lori Barnesanderson this week','LinkedIn connect to Jana Thompson (CPO) + Stacy Hansbury (SVP Global CX)','Challenger: EdTech orgs using Pendo for guidance and FullStory for replay are managing 3 vendors where 1 handles all'],sdr:['Sequence: Shawn Francis, Rohun Pai, Kate Gemmellaro, Brad Fulkerson, Dominik Pucek','Personalize to Sr Director AI/Assessment persona → Amplitude as behavioral feedback loop for AI tuning','Follow-up: email T1 → connect T2 → video message T3']},
+  {acct:'Fifth Third Bank',badge:'p1',intent:61,stage:'Consideration',tparr:'$1.1M',gap:'14 of 17 contacts red, 1 InMail 7 months ago',summary:'Strong profile fit with Adobe + WalkMe + Snowflake stack. 3 EVPs never touched. Jenny Chan got one InMail in September with no follow-up. This needs a full reset.',dan:['EVP trifecta: Tom Gottlieb (CIO), Ben Hoffman (CSO), Melissa Stevens (CMO) — personalized Challenger emails','Re-engage Jenny Chan — 7 months since last touch, she is a Champion-level contact','Chicago: John Piazza (Head of Product, Newline) is Chicago-based — use geography'],sdr:['Sequence: Bryan Greaves, Erin Crawford, Bobby Kahn, Adam Wolf, Greg Prince','Adobe co-exist + GA Takeout + Web Experiment play — all mapped by 6sense','Call blitz to Cincinnati: Jason Kammer, Mike Beach, Michael Rash']},
+  {acct:'Enterprise Holdings',badge:'p1',intent:81,stage:'Decision',tparr:'$2.0M',gap:'CIO + VP Loyalty never touched, 12 calls no follow-up',summary:'Decision stage with alumni present. 12 contacts called 2/18 with no VM, no follow-up email for 60 days — sequence is dead. CIO Shane Behl and VP John Macdonald have never been contacted.',dan:['Direct email to Shane Behl (CIO) and John Macdonald (VP Consumer Digital, Loyalty)','NEPQ to Macdonald: how loyalty personalization is measured today vs what is actually possible','Reference: rental mobility analytics is a known Amplitude use case'],sdr:['Send proof-point re-engagement to all 12 called contacts — 60 days of silence is too long','Fix bad numbers: Tj Oldani and Akshita Puram have bad Outreach numbers','Laura Hawkins + Jared Bridgeman need to be added to Outreach']},
+  {acct:'Grainger',badge:'p2',intent:69,stage:'Consideration',tparr:'$2.9M',gap:'CPO untouched, brand sequences stalled since Feb',summary:'Shinola event touched 5 contacts. Brand sequence Feb touched 8 more. Snowflake L&L is a warm channel now. But CPO Brian W — the economic buyer — has never been contacted.',dan:['CPO Brian W — direct Challenger email this week, no more delays','Snowflake L&L warm re-entry: invite Shalaka Tamhane, Jennifer Urban, Sean Foran, Cody Juntikka','NEPQ: "How does Zoro analytics roll up to Grainger.com analytics today — and where does that break?"'],sdr:['Restart Shama P + David Brenner — both Directors, both red','Add Wendy Dilliard + Anaf Durrani to formal sequence (event-only currently)','Pull Cavelle Benjamin + Joe Troderman into call step']},
+  {acct:"Wendy's",badge:'p2',intent:61,stage:'Consideration',tparr:'$1.7M',gap:'Active on 5 contacts, 4 contacts with emails never touched',summary:"Active sequence on Jim Bender, Todd Roe, Akhilesh, Brian Abston, Corey Wetherby. But Elise Baer, Cristian Fernandes, David Galinsky — never contacted despite having mapped emails.",dan:['T7 strip line to Akhilesh + Brian Abston who have not responded in 3+ weeks','Direct email to David Galinsky (Sr Dir Omnichannel Measurement) — analytics persona, perfect fit','Re-engage Jim Bender: VP level, multi-touched — push for meeting ask now'],sdr:['Enroll Elise Baer + Cristian Fernandes in sequence — emails are mapped in spreadsheet','Corey Wetherby + Anthony Gerdeman: 4 touches — move to call step']},
+];
+
+const CONTACTS_DATA=[
+  {acct:'United Airlines',intent:84,contacts:[
+    {n:'Jason Birnbaum',t:'CIO',s:'green',a:'UA sequence'},
+    {n:'Grant Milstead',t:'VP Digital Technology',s:'green',a:'Wager + UA sequence'},
+    {n:'Michael Petermann',t:'Managing Dir Digital Products & Strategy',s:'green',a:'PL seq + InMail + UA seq'},
+    {n:'Eliza Nevers',t:'Managing Dir - MileagePlus Product & Eng',s:'yellow',a:'Wager only'},
+    {n:'Mahesh Veda',t:'Managing Dir - Digital Channels & Loyalty',s:'red',a:'None'},
+    {n:'Vikram Eleti',t:'Director Digital Technology',s:'green',a:'UA sequence'},
+    {n:'George Edwards',t:'Director Digital Tech - Airport CX',s:'green',a:'UA sequence'},
+    {n:'Daniel Mack',t:'Director Digital Strategy & Innovation',s:'green',a:'UA seq + InMails'},
+    {n:'Jason Flint',t:'Director Digital Products',s:'green',a:'UA sequence'},
+    {n:'Jessica P',t:'Director Digital Tech - Analytics & Innovation',s:'green',a:'UA sequence'},
+    {n:'Mike Skoda',t:'Director Digital Insights & Optimization',s:'green',a:'UA sequence'},
+    {n:'Rajesh Krishnan',t:'Director Customer Servicing Digital',s:'red',a:'None'},
+    {n:'Luke Meminger',t:'Director Digital Fleet Management',s:'red',a:'None'},
+    {n:'Sadia Khan',t:'Director Digital Marketing & Operations',s:'red',a:'None'},
+    {n:'Mehul Patel',t:'Director - Loyalty Program Design',s:'red',a:'None'},
+    {n:'Indresh Chatram',t:'Director Digital Technology',s:'red',a:'None'},
+    {n:'Rama Rachappa',t:'Director Digital Technology',s:'red',a:'None'},
+    {n:'Dominic Green',t:'Director Inflight Entertainment',s:'red',a:'None'},
+  ]},
+  {acct:'Enterprise Holdings',intent:81,contacts:[
+    {n:'Shane Behl',t:'CIO',s:'red',a:'Never contacted'},
+    {n:'John Macdonald',t:'VP Consumer Digital, Loyalty & Analytics',s:'red',a:'Never contacted'},
+    {n:'Paul Reh',t:'VP Customer Experience Global Ops',s:'red',a:'Never contacted'},
+    {n:'Tim McKittrick',t:'AVP Digital Products',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Neil Fitzgerald',t:'AVP Business Strategy & Technology',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Susan Lynch',t:'AVP Marketing Activation',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Max Everett',t:'Head of Loyalty',s:'green',a:'Sequence + Called 2/18, VM left'},
+    {n:'Tj Oldani',t:'CX Strategy Director',s:'yellow',a:'Sequence + Bad # in Outreach'},
+    {n:'Dan Weas',t:'Director Product Management',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Jesse Zenthoefer',t:'Director Advanced Analytics',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Jeff Marlow',t:'Director Digital Product - Mobility',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Kevin Brandt',t:'Digital Strategy & Marketing Director',s:'green',a:'Sequence + Called, VM left'},
+    {n:'Sarah Federko',t:'Global Insights Director',s:'red',a:'Never contacted'},
+    {n:'Paul Wilhite',t:'Director Marketing Technology',s:'red',a:'Never contacted'},
+    {n:'Shailesh Panth',t:'Marketing Measurement & Analytics Director',s:'green',a:'Sequence + Called 2/18'},
+    {n:'Laura Hawkins',t:'Director Digital Product - Daily Rental',s:'yellow',a:'Sequence, not in Outreach'},
+    {n:'Akshita Puram',t:'Director Enterprise Fleet Mgmt Portfolio',s:'yellow',a:'Sequence + Bad # in Outreach'},
+  ]},
+  {acct:"Wendy's",intent:61,contacts:[
+    {n:'Jim Bender',t:'VP Global Customer Journey',s:'green',a:'Email + InMail + Call'},
+    {n:'Todd Roe',t:'Sr Director Consumer Strategy & Analytics',s:'green',a:'Email + InMail + Call'},
+    {n:'Brian Abston',t:'Sr Director Digital Technology',s:'green',a:'Email + InMail + Call'},
+    {n:'Akhilesh Anakapally',t:'Director Digital Products',s:'green',a:'4 touches incl. case study'},
+    {n:'Corey Wetherby',t:'Manager Digital Analytics',s:'green',a:'4 touches'},
+    {n:'Anthony Gerdeman',t:'Manager Digital Analytics',s:'green',a:'3 touches'},
+    {n:'Elise Baer',t:'Director Enterprise Technology PM',s:'red',a:'None — email mapped'},
+    {n:'Cristian Fernandes',t:'Director Digital Excellence',s:'red',a:'None — email mapped'},
+    {n:'David Galinsky',t:'Sr Director Omnichannel Measurement & Analytics',s:'red',a:'None — email mapped'},
+  ]},
+  {acct:'Fifth Third Bank',intent:61,contacts:[
+    {n:'Tom Gottlieb',t:'EVP & CIO',s:'red',a:'Never contacted'},
+    {n:'Ben Hoffman',t:'EVP Chief Strategy Officer',s:'red',a:'Never contacted'},
+    {n:'Melissa Stevens',t:'EVP Chief Marketing Officer',s:'red',a:'Never contacted'},
+    {n:'Jenny Chan',t:'SVP Digital Growth Marketing',s:'yellow',a:'1 InMail Sep 2025'},
+    {n:'Doug Smith',t:'SVP Sr Director Marketing Technology',s:'red',a:'Never contacted'},
+    {n:'Jason Kammer',t:'SVP Technology Product Strategy',s:'red',a:'Never contacted'},
+    {n:'Mike Beach',t:'SVP Director Payments Product Mgmt',s:'red',a:'Never contacted'},
+    {n:'Bryan Greaves',t:'VP Consumer Insights & Analytics',s:'red',a:'Never contacted'},
+    {n:'Erin Crawford',t:'VP Head Consumer Digital - Payments',s:'red',a:'Never contacted'},
+    {n:'Bobby Kahn',t:'VP Senior Product & Channel Manager',s:'red',a:'Never contacted'},
+    {n:'Adam Wolf',t:'Head of Design UX & Product',s:'red',a:'Never contacted'},
+    {n:'John Piazza',t:'Head of Product Newline',s:'red',a:'Never contacted'},
+    {n:'Gregory Prince',t:'Director Product Management',s:'red',a:'Never contacted'},
+  ]},
+  {acct:'Grainger',intent:69,contacts:[
+    {n:'Brian W',t:'Chief Product Officer',s:'red',a:'Never contacted'},
+    {n:'Cecelia Myers',t:'VP Group Product Manager',s:'yellow',a:'Shinola event only'},
+    {n:'Lucas Hinz',t:'VP Group Product Manager',s:'yellow',a:'Brand sequence Feb'},
+    {n:'Anaf Durrani',t:'VP Product Engineering',s:'yellow',a:'Shinola event only'},
+    {n:'Ali Akbar',t:'VP Product Portfolio & Digital Strategy',s:'yellow',a:'Shinola event only'},
+    {n:'John Schumacher',t:'VP Group Product Manager',s:'yellow',a:'Brand sequence Feb'},
+    {n:'Shalaka Tamhane',t:'Director Digital Experience Analytics',s:'green',a:'Wager + Brand sequence'},
+    {n:'Sean Foran',t:'Director eCommerce',s:'green',a:'Brand seq + Snowflake'},
+    {n:'Cody Juntikka',t:'Director eCommerce & Strategic Planning',s:'green',a:'Brand seq + InMail + Snowflake'},
+    {n:'Anuradha Chandwani',t:'Director Product Management',s:'green',a:'Brand seq + Snowflake'},
+    {n:'Reena Patel',t:'Sr Director User Experience',s:'green',a:'Brand seq + Snowflake'},
+    {n:'Jennifer Urban',t:'Director User Experience',s:'green',a:'Ace email + Snowflake'},
+    {n:'Menghan Fu',t:'Director Product Analytics & ML',s:'yellow',a:'Brand seq + Snowflake'},
+    {n:'Petritia Sampath',t:'Director Product Management',s:'yellow',a:'Brand seq only'},
+    {n:'Shama P',t:'Director Product Management',s:'red',a:'None'},
+    {n:'David Brenner',t:'Director Product Management',s:'red',a:'None'},
+    {n:'Joe Troderman',t:'Director Product Management',s:'yellow',a:'Snowflake event only'},
+    {n:'Cavelle Benjamin',t:'Director PM - Inventory Management',s:'yellow',a:'Brand seq only'},
+  ]},
+  {acct:'Abbott',intent:94,contacts:[
+    {n:'Sabina Ewing',t:'SVP & CIO',s:'red',a:'Never contacted'},
+    {n:'Ivan Martinez',t:'Division VP Strategy & Digital Innovation',s:'red',a:'Never contacted'},
+    {n:'Terry Finch',t:'Division VP Digital Technology Services',s:'red',a:'Never contacted'},
+    {n:'Kris Mihalic',t:'Head Consumer Product - Diabetes Care',s:'red',a:'Never contacted'},
+    {n:'Elizabeth Baicy',t:'Global Head of Product - Lingo',s:'red',a:'Never contacted'},
+    {n:'Ryan Lakin',t:'Divisional VP Digital Solutions Medical Devices',s:'red',a:'Never contacted'},
+    {n:'Gaurav Mehrotra',t:'Global Leader Data Strategy & Analytics',s:'red',a:'Never contacted'},
+    {n:'Cameron North',t:'Director Global Customer Experience',s:'red',a:'Never contacted'},
+    {n:'Dan Stout',t:'Director Digital Delivery & Mktg Tech',s:'red',a:'Never contacted'},
+    {n:'Arvind K',t:'Director Global Digital Ops & Analytics',s:'red',a:'Never contacted'},
+    {n:'Nitesh Luthra',t:'Director Product Mgmt Digital Business',s:'red',a:'Never contacted'},
+    {n:'John Yesko',t:'Director Digital & Omnichannel Engagement',s:'red',a:'Never contacted'},
+    {n:'Kevin Kaiser',t:'Director Digital & eCommerce Products',s:'red',a:'Never contacted'},
+    {n:'Patrick Feeney',t:'Director Emerging Tech & Mobile Eng',s:'red',a:'Never contacted'},
+  ]},
+  {acct:'McGraw Hill',intent:79,contacts:[
+    {n:'Lori Barnesanderson',t:'Chief Product Officer',s:'red',a:'Never contacted'},
+    {n:'David Cortese',t:'Chief Digital Information Officer',s:'red',a:'Email mapped — never sent'},
+    {n:'Jana Thompson',t:'Chief Product Officer',s:'red',a:'Email mapped — never sent'},
+    {n:'Dave Duke',t:'Chief Product Officer',s:'red',a:'Never contacted'},
+    {n:'Stacy Hansbury',t:'SVP Global Customer Experience',s:'red',a:'Never contacted'},
+    {n:'Libby Van Why',t:'VP Product Experience',s:'red',a:'Email mapped — never sent'},
+    {n:'Michael Crumsho',t:'VP Technology & Product Delivery',s:'red',a:'Email mapped — never sent'},
+    {n:'Ashish Gupta',t:'VP Product Engineering',s:'red',a:'Never contacted'},
+    {n:'Kate Gemmellaro',t:'Sr Director Digital Web eCommerce & Media',s:'red',a:'Email mapped — never sent'},
+    {n:'Shawn Francis',t:'Sr Director AI Assessment & Personalization PM',s:'red',a:'Email mapped — never sent'},
+    {n:'Rohun Pai',t:'Sr Director Enterprise Product',s:'red',a:'Email mapped — never sent'},
+    {n:'Terry Cheng',t:'Sr Director Technical Product Mgmt',s:'red',a:'Never contacted'},
+    {n:'Dominik Pucek',t:'Director Product Management',s:'red',a:'Email mapped — never sent'},
+  ]},
+];
+
+let todos=[...TODOS];
+let ownerFilter='all';
+let currentContact={};
+let currentType='email';
+let currentFW='challenger';
+
+function switchPg(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('act'));
+  document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('act'));
+  document.getElementById(id).classList.add('act');
+  btn.classList.add('act');
+  if(id==='todo')renderTodos();
+  if(id==='strat')renderStrat();
+  if(id==='contacts')renderContacts();
+}
+
+function setOwner(f,btn){
+  ownerFilter=f;
+  document.querySelectorAll('.otog').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  renderTodos();
+}
+
+function renderTodos(){
+  let filtered=todos;
+  if(ownerFilter==='dan') filtered=todos.filter(t=>t.owner==='dan'||t.owner==='both');
+  else if(ownerFilter==='sdr') filtered=todos.filter(t=>t.owner==='sdr'||t.owner==='both');
+  else if(ownerFilter==='open') filtered=todos.filter(t=>!t.done);
+  const total=todos.length,done=todos.filter(t=>t.done).length,open=total-done;
+  const p1=todos.filter(t=>t.pri==='p1'&&!t.done).length;
+  const p2=todos.filter(t=>t.pri==='p2'&&!t.done).length;
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat"><div class="stat-val">${open}</div><div class="stat-lbl">Open tasks</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--r)">${p1}</div><div class="stat-lbl">Priority 1</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--y)">${p2}</div><div class="stat-lbl">Priority 2</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--g)">${done}</div><div class="stat-lbl">Completed</div></div>`;
+  const p1i=filtered.filter(t=>t.pri==='p1');
+  const p2i=filtered.filter(t=>t.pri==='p2');
+  const p3i=filtered.filter(t=>t.pri==='p3');
+  let html='';
+  if(p1i.length){html+=`<div class="section-lbl">Priority 1 — urgent this week</div>`;p1i.forEach(t=>html+=card(t));}
+  if(p2i.length){html+=`<div class="section-lbl">Priority 2 — build momentum this week</div>`;p2i.forEach(t=>html+=card(t));}
+  if(p3i.length){html+=`<div class="section-lbl">Priority 3 — plant seeds for next 30 days</div>`;p3i.forEach(t=>html+=card(t));}
+  document.getElementById('todo-list').innerHTML=html||`<div style="padding:1rem;font-size:12px;color:var(--text2)">No tasks match this filter.</div>`;
+}
+
+function card(t){
+  const ol=t.owner==='dan'?'own-dan':t.owner==='sdr'?'own-sdr':'own-both';
+  const on=t.owner==='dan'?'Dan':t.owner==='sdr'?'SDR':'Dan + SDR';
+  return `<div class="todo-card bl-${t.pri} ${t.done?'done':''}" id="card-${t.id}">
+    <div class="cb ${t.done?'checked':''}" onclick="toggle(${t.id})"></div>
+    <div>
+      <div class="todo-main">${t.task}</div>
+      <div class="todo-sub">${t.why}</div>
+      ${t.strategy?`<div class="todo-strat">Strategy: ${t.strategy}</div>`:''}
+      <div class="todo-meta" style="margin-top:6px">
+        <span class="pri-badge ${t.pri}">${t.pri==='p1'?'P1':t.pri==='p2'?'P2':'P3'}</span>
+        <span class="badge ${ol}" style="padding:2px 7px">${on}</span>
+        <span class="badge bg-b">${t.acct}</span>
+      </div>
+    </div>
+    <div class="todo-actions">
+      <button class="btn-sm" onclick='openModal(${JSON.stringify(t.contact)})'>✉ Message</button>
+    </div>
+  </div>`;
+}
+
+function toggle(id){const t=todos.find(x=>x.id===id);if(t){t.done=!t.done;renderTodos();}}
+
+function toggleAdd(){document.getElementById('add-form').classList.toggle('show');}
+
+function addTask(){
+  const text=document.getElementById('nt-text').value.trim();
+  if(!text)return;
+  todos.push({id:Date.now(),owner:document.getElementById('nt-owner').value,pri:document.getElementById('nt-pri').value,acct:document.getElementById('nt-acct').value||'Custom',done:false,task:text,why:'Custom task',strategy:'',contact:{name:'',title:'',acct:'',industry:''}});
+  document.getElementById('nt-text').value='';
+  document.getElementById('nt-acct').value='';
+  toggleAdd();
+  renderTodos();
+}
+
+function renderStrat(){
+  let html='';
+  STRATEGIES.forEach(s=>{
+    html+=`<div class="strategy-card">
+      <div class="strat-head">
+        <span class="strat-acct">${s.acct}</span>
+        <span class="pri-badge ${s.badge}">P${s.badge.charAt(1)}</span>
+        <span class="badge bg-b">Intent ${s.intent}</span>
+        <span class="badge bg-g">${s.stage}</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:auto">${s.tparr} tpARR · ${s.gap}</span>
+      </div>
+      <div class="strat-body">${s.summary}</div>
+      <div class="strat-cols">
+        <div><div class="strat-col-lbl" style="color:var(--g)">Dan owns</div><ul class="strat-bullets">${s.dan.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+        <div><div class="strat-col-lbl" style="color:var(--pt)">SDR owns</div><ul class="strat-bullets">${s.sdr.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('strat-list').innerHTML=html;
+}
+
+function renderContacts(){
+  let html='';
+  CONTACTS_DATA.forEach(a=>{
+    const g=a.contacts.filter(c=>c.s==='green').length,y=a.contacts.filter(c=>c.s==='yellow').length,r=a.contacts.filter(c=>c.s==='red').length;
+    html+=`<div class="contact-acct-head">
+      <span style="font-weight:600;font-size:13px;flex:1">${a.acct}</span>
+      <span class="badge bg-g">${g} active</span>
+      <span class="badge bg-y">${y} partial</span>
+      <span class="badge bg-r">${r} none</span>
+      <span style="font-size:11px;color:var(--text2)">Intent ${a.intent}</span>
+    </div>
+    <div class="contact-grid">`;
+    a.contacts.forEach(c=>{
+      const bcl=`bl-${c.s}`,bdg=c.s==='green'?'bg-g':c.s==='yellow'?'bg-y':'bg-r';
+      const bl=c.s==='green'?'Active':c.s==='yellow'?'Partial':'No outreach';
+      html+=`<div class="contact-row ${bcl}">
+        <div>
+          <span class="c-name">${c.n}</span>
+          <span class="c-title"> · ${c.t}</span>
+          <div class="c-activity"><span class="badge ${bdg}">${bl}</span><span style="font-size:11px;color:var(--text2);margin-left:6px">${c.a}</span></div>
+        </div>
+        <button class="btn-sm" onclick='openModal(${JSON.stringify({name:c.n,title:c.t,acct:a.acct,industry:""})})'>✉</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('contact-tracker').innerHTML=html;
+}
+
+function openModal(c){
+  currentContact=c;
+  document.getElementById('modal-title').textContent=`Message builder${c.name?' — '+c.name:''}`;
+  document.getElementById('modal-sub').textContent=`${c.title||''}${c.acct?' · '+c.acct:''}`;
+  document.getElementById('gen-output').style.display='none';
+  document.getElementById('copy-btn').style.display='none';
+  document.getElementById('gen-status').textContent='';
+  document.getElementById('ctx').value='';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function selType(t,btn){currentType=t;document.querySelectorAll('#modal .fw-btn[onclick^="selType"]').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function selFW(f,btn){currentFW=f;document.querySelectorAll('#modal .fw-btn[onclick^="selFW"]').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+
+function genMsg(){
+  const c=currentContact;
+  const ctx=document.getElementById('ctx').value.trim();
+  const out=document.getElementById('gen-output');
+  out.style.display='block';out.classList.add('loading');
+  out.textContent='Generating tailored message…';
+  document.getElementById('copy-btn').style.display='none';
+  document.getElementById('gen-status').textContent='';
+  const typeLabel={email:'Cold email',inmail:'LinkedIn InMail',call:'Call opening script',vm:'Voicemail (20 sec)'}[currentType]||'Email';
+  const fwLabel={challenger:'Challenger Sale',nepq:'NEPQ (Neuro-Emotional Persuasion Questioning)',hybrid:'Challenger insight + NEPQ questions hybrid'}[currentFW];
+  const sys=`You are an elite B2B sales strategist writing outreach for Dan Walsh, Enterprise AE at Amplitude — the #1 digital analytics and product intelligence platform. Amplitude enables real-time behavioral analytics, A/B experimentation, Session Replay, Feature Experimentation, and Guides & Surveys. Key competitors to displace: Adobe Analytics, GA/GA360, Pendo, Mixpanel, Heap, FullStory, Optimizely, Quantum Metric. Dan's ICP: Director+ in Product, Analytics, Digital Engineering at large enterprises. Challenger = reframe with a commercial insight, tailor to role, implication opens conversation. NEPQ = targeted questions surfacing emotional gap: "What does it currently look like when…", "How confident are you that…", "What happens when…". Hybrid = Challenger insight then NEPQ questions. Tone: Direct, confident, no buzzwords, peer not vendor. Length: Email <110 words + subject. InMail <75 words. Call <90 sec. VM = 20-25 sec. One ask only.`;
+  const user=`Write a ${typeLabel} using the ${fwLabel} for:\nName: ${c.name||'recipient'}\nTitle: ${c.title||'Director/VP'}\nCompany: ${c.acct||'company'}\nIndustry: ${c.industry||'enterprise'}\n${ctx?`Context: ${ctx}\n`:''}\nKnown tech stacks: Abbott=Mixpanel+Adobe+GA+LaunchDarkly+Braze+Snowflake. McGraw Hill=Pendo+Adobe+FullStory+Hotjar+Appcues+Segment. Fifth Third=Adobe+WalkMe+AdobeTarget+GA+Snowflake. Grainger=Adobe+Pendo+GA+Snowflake. Enterprise Holdings=Adobe+QuantumMetric+GA+Hotjar. United Airlines=Adobe+Pendo+Optimizely+QuantumMetric+GA. Wendys=GA360+Branch.\n\nWrite the message only. No preamble. If email, start with "Subject:" on line 1.`;
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:sys+'\n\n'+user}]})})
+  .then(r=>r.json()).then(data=>{
+    out.classList.remove('loading');
+    out.textContent=data.content&&data.content[0]?data.content[0].text:'Error generating.';
+    document.getElementById('copy-btn').style.display='inline-block';
+    document.getElementById('gen-status').textContent='✓ Ready';
+  }).catch(e=>{out.classList.remove('loading');out.textContent='Error: '+e.message;});
+}
+
+function copyMsg(){
+  navigator.clipboard.writeText(document.getElementById('gen-output').textContent)
+  .then(()=>{document.getElementById('copy-btn').textContent='Copied!';setTimeout(()=>document.getElementById('copy-btn').textContent='Copy',2000);});
+}
+
+document.addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+renderTodos();
+</script>
+</body>
+</html>
